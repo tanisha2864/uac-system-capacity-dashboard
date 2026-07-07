@@ -17,6 +17,9 @@ st.title("UAC System Capacity & Care Load Dashboard")
 # -------------------------------------------------
 df = pd.read_csv("final_uac_analysis.csv")
 
+st.write(df.head())
+st.write(df.dtypes)
+
 # -------------------------------------------------
 # Convert Date
 # -------------------------------------------------
