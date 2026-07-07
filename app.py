@@ -1,68 +1,159 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# TITLE
-st.title("Factory-to-Customer Shipping Route Efficiency Dashboard")
+# -------------------------------------------------
+# Page Configuration
+# -------------------------------------------------
+st.set_page_config(
+    page_title="UAC System Capacity Dashboard",
+    layout="wide"
+)
 
-# LOAD DATA
-df = pd.read_csv("Nassau Candy Distributor.csv")
+st.title("UAC System Capacity & Care Load Dashboard")
 
-# KPI SECTION
-st.subheader("KPI Summary")
+# -------------------------------------------------
+# Load Dataset
+# -------------------------------------------------
+df = pd.read_csv("final_uac_analysis.csv")
+
+# -------------------------------------------------
+# Convert Date
+# -------------------------------------------------
+df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
+# Remove empty dates
+df = df.dropna(subset=["Date"])
+
+# Sort by date
+df = df.sort_values("Date")
+
+# -------------------------------------------------
+# KPI Summary
+# -------------------------------------------------
+st.header("KPI Summary")
 
 col1, col2, col3 = st.columns(3)
 
 col1.metric(
-    "Average Lead Time",
-    round(df['Lead Time'].mean(),2)
+    "Average System Load",
+    f"{df['Total System Load'].mean():,.2f}"
 )
 
 col2.metric(
-    "Maximum Lead Time",
-    round(df['Lead Time'].max(),2)
+    "Maximum System Load",
+    f"{df['Total System Load'].max():,.0f}"
 )
 
 col3.metric(
-    "Total Routes",
-    df['Route'].nunique()
+    "Average Net Intake",
+    f"{df['Net Intake Pressure'].mean():,.2f}"
 )
 
-# LEAD TIME DISTRIBUTION
-st.subheader("Lead Time Distribution")
+# -------------------------------------------------
+# Total System Load
+# -------------------------------------------------
+st.subheader("Total System Load")
 
-fig, ax = plt.subplots(figsize=(10,5))
+fig1, ax1 = plt.subplots(figsize=(12,5))
 
-ax.hist(df['Lead Time'])
-
-ax.grid(True)
-
-st.pyplot(fig)
-
-# TOP DELAY ROUTES
-st.subheader("Top Delay Routes")
-
-top_routes = (
-    df.groupby('Route')['Delay']
-    .mean()
-    .sort_values(ascending=False)
-    .head(10)
+ax1.plot(
+    df["Date"],
+    df["Total System Load"],
+    color="blue",
+    linewidth=2
 )
 
-fig, ax = plt.subplots(figsize=(12,5))
+ax1.set_xlabel("Date")
+ax1.set_ylabel("Total System Load")
+ax1.grid(True)
 
-ax.bar(
-    top_routes.index,
-    top_routes.values
+st.pyplot(fig1)
+
+# -------------------------------------------------
+# Net Intake Pressure
+# -------------------------------------------------
+st.subheader("Net Intake Pressure")
+
+fig2, ax2 = plt.subplots(figsize=(12,5))
+
+ax2.plot(
+    df["Date"],
+    df["Net Intake Pressure"],
+    color="green"
 )
 
-plt.xticks(rotation=90)
+ax2.axhline(0, linestyle="--", color="red")
 
-ax.set_ylabel("Delay Percentage")
+ax2.set_xlabel("Date")
+ax2.set_ylabel("Net Intake Pressure")
+ax2.grid(True)
 
-st.pyplot(fig)
+st.pyplot(fig2)
 
-# DATA PREVIEW
+# -------------------------------------------------
+# 7-Day Average Load
+# -------------------------------------------------
+st.subheader("7-Day Average Load")
+
+fig3, ax3 = plt.subplots(figsize=(12,5))
+
+ax3.plot(
+    df["Date"],
+    df["7-Day Avg Load"],
+    color="orange",
+    linewidth=2
+)
+
+ax3.set_xlabel("Date")
+ax3.set_ylabel("7-Day Average Load")
+ax3.grid(True)
+
+st.pyplot(fig3)
+
+# -------------------------------------------------
+# CBP vs HHS Care Load
+# -------------------------------------------------
+st.subheader("CBP vs HHS Care Load")
+
+fig4, ax4 = plt.subplots(figsize=(12,5))
+
+ax4.plot(
+    df["Date"],
+    df["Children in CBP custody"],
+    label="CBP Custody",
+    linewidth=2
+)
+
+ax4.plot(
+    df["Date"],
+    df["Children in HHS Care"],
+    label="HHS Care",
+    linewidth=2
+)
+
+ax4.set_xlabel("Date")
+ax4.set_ylabel("Children")
+ax4.legend()
+ax4.grid(True)
+
+st.pyplot(fig4)
+
+# -------------------------------------------------
+# Dataset Preview
+# -------------------------------------------------
 st.subheader("Dataset Preview")
 
-st.dataframe(df.head(20))
+st.dataframe(df)
+
+# -------------------------------------------------
+# Download Button
+# -------------------------------------------------
+csv = df.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    label="Download Processed Dataset",
+    data=csv,
+    file_name="final_uac_analysis.csv",
+    mime="text/csv"
+)
